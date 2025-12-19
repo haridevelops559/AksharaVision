@@ -1,0 +1,11 @@
+```txt
+torch
+torchvision
+timm
+numpy
+pandas
+opencv-python
+matplotlib
+gradio
+tinydb
+Pillow
