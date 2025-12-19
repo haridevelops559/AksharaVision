@@ -1,0 +1,7 @@
+*.pth
+*.csv
+*.json
+project_files/
+diagnostics/
+logs/
+__pycache__/
