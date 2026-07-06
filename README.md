@@ -1,45 +1,7 @@
 ````md
 # AksharaVision  
-## Robust Kannada Handwritten Character Recognition using Swin Transformer, Calibration, and Feedback-Driven Learning
 
-> **AksharaVision** is an end-to-end Kannada handwritten character recognition system designed for robust, reliable, and deployable OCR. The project combines dataset curation, augmentation, CNN baselines, hierarchical Swin Transformers, focal loss, centroid refinement, Expected Calibration Error (ECE), robustness testing, progressive word segmentation, and a Gradio-based feedback interface.
 
-![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
-![PyTorch](https://img.shields.io/badge/PyTorch-Deep%20Learning-red)
-![Gradio](https://img.shields.io/badge/Gradio-Interactive%20UI-orange)
-![OCR](https://img.shields.io/badge/Task-Kannada%20Handwritten%20OCR-green)
-![Transformer](https://img.shields.io/badge/Model-Swin%20Transformer-purple)
-
----
-
-## Table of Contents
-
-- [Project Overview](#project-overview)
-- [Problem Statement](#problem-statement)
-- [Key Contributions](#key-contributions)
-- [Dataset Curation](#dataset-curation)
-- [Dataset Description](#dataset-description)
-- [Preprocessing Pipeline](#preprocessing-pipeline)
-- [Albumentations Strategy](#albumentations-strategy)
-- [Baseline Model Exploration](#baseline-model-exploration)
-- [Why Swin Transformer](#why-swin-transformer)
-- [Swin Transformer Architecture](#swin-transformer-architecture)
-- [Swin V1, V2, and V3](#swin-v1-v2-and-v3)
-- [Why Focal Loss Instead of Cross-Entropy](#why-focal-loss-instead-of-cross-entropy)
-- [Centroid Refinement](#centroid-refinement)
-- [Calibration and Expected Calibration Error](#calibration-and-expected-calibration-error)
-- [Robustness and Stress Testing](#robustness-and-stress-testing)
-- [Metrics Comparison](#metrics-comparison)
-- [Gradio Deployment](#gradio-deployment)
-- [Repository Structure](#repository-structure)
-- [Installation](#installation)
-- [Training](#training)
-- [Inference](#inference)
-- [Limitations](#limitations)
-- [Future Work](#future-work)
-- [Citation](#citation)
-
----
 
 # Project Overview
 
