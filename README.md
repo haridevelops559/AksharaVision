@@ -1,4 +1,4 @@
-````md
+
 # AksharaVision  
 
 
@@ -22,33 +22,6 @@ Kannada handwritten OCR is a challenging computer vision problem because Kannada
 Traditional OCR pipelines and simple CNNs often struggle to capture both local stroke details and global character structure.
 
 AksharaVision addresses this challenge using a carefully curated dataset and a hierarchical Swin Transformer architecture.
-
-The system is designed as a complete OCR pipeline:
-
-```text
-Handwritten Sheets
-        ↓
-PDF / Image Conversion
-        ↓
-Contour Detection and Character Cropping
-        ↓
-Dataset Cleaning and Balancing
-        ↓
-Preprocessing and Albumentations
-        ↓
-CNN Baselines and Transformer Experiments
-        ↓
-Swin Transformer V1 → V2 → V3
-        ↓
-Focal Loss + Centroid Refinement
-        ↓
-ECE Calibration + Robustness Testing
-        ↓
-Gradio OCR Interface
-        ↓
-Feedback Logging and Future Retraining
-````
-
 ---
 
 # Problem Statement
@@ -66,36 +39,91 @@ Existing Kannada OCR systems face several limitations:
 The goal of this project is to develop a robust handwritten Kannada character recognition system that is accurate, calibrated, interpretable, and deployable.
 
 ---
+## Key Contributions
 
-# Key Contributions
+- Curated a balanced Kannada handwritten-character dataset spanning **113 classes**; built an OpenCV contour-based sheet-to-character extraction pipeline and standardized the dataset to **500 images per class (56,500 images)**.
 
-The project makes the following contributions:
+- Benchmarked **ResNet + BiLSTM + Attention**, **EfficientNet + CBAM**, and three **Swin Transformer** iterations; selected Swin V3 after correcting label/split issues, introducing class-stratified validation, and improving difficult-class learning.
 
-* Curated a balanced handwritten Kannada dataset containing **113 character classes**.
-* Built an automated sheet-to-character extraction pipeline using OpenCV contour detection.
-* Balanced the dataset to **500 images per class**, resulting in **56,500 images**.
-* Explored multiple architectures:
+- Replaced cross-entropy with **Focal Loss** and added a **512-dimensional embedding head**; incorporated centroid-neighbor analysis, Top-k evaluation, confusion matrices, confusing-pair reports, per-class metrics, and hard-sample review for error diagnosis.
 
-  * ResNet + BiLSTM + Attention
-  * EfficientNet + CBAM
-  * Swin Transformer V1
-  * Swin Transformer V2
-  * Swin Transformer V3
-* Replaced standard cross-entropy with **Focal Loss** to improve learning on difficult and visually similar classes.
-* Added a **512-dimensional embedding head**.
-* Introduced **centroid-based refinement** for stable predictions.
-* Applied **temperature scaling** to improve confidence calibration.
-* Evaluated reliability using **Expected Calibration Error (ECE)**.
-* Performed robustness tests under ink darkening, background jitter, and zoom/crop distortion.
-* Built a Gradio interface for:
+- Calibrated V3 probabilities using **temperature scaling** and evaluated reliability with **ECE** and multiclass Brier score; stress-tested robustness under ink, background, and zoom/crop perturbations, and added occlusion-sensitivity maps for prediction-level visual interpretability.
 
-  * Single-character OCR
-  * Word-level OCR using progressive segmentation
-  * User feedback collection
-  * JSON and CSV feedback storage
+- Built an earlier two-tab Gradio prototype for **single-character OCR** and **word-level OCR via progressive segmentation**; supported candidate splits, segment-level Top-3 predictions, reconstructed word hypotheses, and JSON/CSV feedback capture.
+
+- Extended the interface into a three-tab Gradio workflow for **Character OCR**, **Explain Prediction**, and **Deployment Monitoring**; added calibrated Top-3 predictions, input-quality checks, Accept/Review/Retake routing, occlusion explanations, and local human-feedback capture.
+
+- Designed privacy-aware anonymous inference telemetry for **latency, calibrated confidence, Top-1/Top-2 margin, decision route, blur, brightness, ink ratio, aspect ratio, and predicted label**; user-uploaded images are not stored by default.
+
+- Added a validation-distribution baseline and **Population Stability Index (PSI)** drift checks for confidence, uncertainty margin, blur, brightness, and ink ratio to flag when live inputs differ from held-out evaluation data.
+
+- Tracked the final **Swin V3 release** with :contentReference[oaicite:0]{index=0}, recording classification, calibration, robustness, deployment latency, throughput, model-footprint, and diagnostic artifacts for reproducible release validation.
 
 ---
+## System Architecture and End-to-End Pipeline
 
+AksharaVision is designed as an end-to-end Kannada handwritten OCR system that covers dataset construction, model development, reliability validation, explainability, interactive inference, and post-deployment monitoring.
+
+```text
+Handwritten Kannada Sheets / Character Images
+        ↓
+PDF and Image Ingestion
+        ↓
+OpenCV Contour Detection, Sheet Segmentation, and Character Cropping
+        ↓
+Dataset Cleaning, Label Verification, and Class Balancing
+        ↓
+113-Class Dataset (500 Images per Class; 56,500 Images)
+        ↓
+Train / Validation Split with Class-Stratified Representation
+        ↓
+Preprocessing and Augmentation
+Resize • Normalize • Rotation • Contrast • Background Variation • Crop Robustness
+        ↓
+Architecture Benchmarking
+ResNet + BiLSTM + Attention
+        ↓
+EfficientNet + CBAM
+        ↓
+Swin Transformer V1 → V2 → V3
+        ↓
+Final Swin V3 Training
+Focal Loss • Regularization • Embedding Head • Fine-Tuning
+        ↓
+512-Dimensional Embedding Space
+        ↓
+Centroid-Neighbor Analysis and Similar-Class Context
+        ↓
+Held-Out Evaluation and Error Diagnostics
+Top-1 / Top-2 / Top-3 • Macro-F1 • Per-Class Metrics
+Confusion Matrix • Confusing Pairs • Hard Samples
+        ↓
+Reliability Validation
+Temperature Scaling • ECE • Multiclass Brier Score
+        ↓
+Robustness and Interpretability
+Ink / Background / Zoom Stress Tests • Occlusion Sensitivity
+        ↓
+W&B Swin V3 Release Validation
+Metrics • Calibration • Robustness • Latency • Throughput • Model Footprint
+        ↓
+Gradio Application Layer
+        ├── Tab 1: Character OCR
+        ├── Tab 2: Word OCR and Progressive Segmentation
+        ├── Tab 3: Explain Prediction and Deployment Monitoring
+        ↓
+Inference Decision Support
+Calibrated Top-3 • Confidence Margin • Input Quality Checks
+Accept • Review Required • Retake Image
+        ↓
+Privacy-Aware Telemetry and Feedback
+Latency • Confidence • Margin • Blur • Brightness • Ink Ratio
+Feedback CSV / JSON / TinyDB
+        ↓
+Drift Monitoring and Future Retraining
+Validation Baseline • PSI Drift Checks • Curated Hard Samples
+---
+```
 # Dataset Curation
 
 ## Data Collection
@@ -190,122 +218,45 @@ The dataset contains:
 * Handwritten variants from multiple contributors
 
 ---
+## Gradio Interface Evolution
 
-# Preprocessing Pipeline
+AksharaVision evolved from a focused two-tab inference demo into a three-tab, reliability-aware OCR interface that separates prediction, explanation, and operational monitoring.
 
-The preprocessing pipeline standardizes raw handwritten samples before training.
+## Earlier Two-Tab Gradio Interface
 
-```text
-Raw Image
-    ↓
-Grayscale Conversion
-    ↓
-Noise Removal
-    ↓
-Foreground Enhancement
-    ↓
-Resize to 224 × 224
-    ↓
-Normalization
-    ↓
-Tensor Conversion
-    ↓
-Model Input
-```
+The earlier Gradio application focused on extending character-level Kannada OCR into a prototype word-recognition workflow with progressive segmentation and feedback collection.
 
-## Preprocessing Steps
-
-### 1. Grayscale Conversion
-
-Images are converted to grayscale to reduce unnecessary color variation.
-
-### 2. Denoising
-
-Noise introduced by scanning, compression, camera capture, or paper texture is reduced.
-
-### 3. Foreground Normalization
-
-Character strokes are enhanced while reducing background influence.
-
-### 4. Resizing
-
-All images are resized to:
-
-```text
-224 × 224
-```
-
-This resolution is compatible with Swin Transformer and CNN backbones.
-
-### 5. Normalization
-
-Pixel values are normalized before being passed into the neural network.
-
----
-
-# Albumentations Strategy
-
-Albumentations is used to simulate realistic handwriting and scanning variations.
-
-The goal is not only to increase dataset size but also to improve generalization.
-
-## Augmentation Techniques
-
-Typical transformations include:
-
-* Rotation
-* Shift
-* Scale
-* Zoom
-* Brightness adjustment
-* Contrast adjustment
-* Blur
-* Gaussian noise
-* Background variation
-* Minor affine transformations
-* Cropping variation
-* Ink intensity variation
+| Tab / Component | Purpose | User Inputs | System Workflow | Outputs | Feedback / Storage |
+|---|---|---|---|---|---|
+| **Tab 1: Character Recognition** | Recognize one handwritten Kannada character at a time | Character image upload; optional alternate prediction selection or manual correction | Image preprocessing → Swin V3 inference → centroid refinement → temperature calibration → Top-3 ranking | Input preview, predicted character, confidence score, and Top-3 predictions | Users can confirm an alternate Top-k prediction or enter a manual correction; feedback is stored in TinyDB and CSV for later review |
+| **Image preprocessing** | Standardize input before inference | Uploaded character image | Resize, normalization, and image preparation for the Swin V3 model | Model-ready image tensor | No direct user feedback; preprocessing issues can be inferred from incorrect or low-confidence cases |
+| **Swin V3 prediction** | Produce class probabilities across the character label space | Preprocessed image tensor | Swin Transformer extracts visual features and predicts class logits | Predicted class and raw class scores | Incorrect predictions can be captured through the character feedback flow |
+| **Centroid refinement** | Add embedding-space similarity context | Model embedding and predicted class | Compares learned representation with class-centroid neighbors | Similar-class context to support ambiguous-character review | Helps identify visually related classes for later confusion analysis |
+| **Temperature calibration** | Improve confidence interpretability | Model logits | Applies learned temperature scaling before probability ranking | Calibrated confidence and calibrated Top-3 predictions | Supports more meaningful confidence review before users submit feedback |
+| **Tab 2: Word Recognition and Progressive Segmentation** | Prototype word-level OCR by splitting a handwritten word into character candidates | Word image upload; preferred segmentation selection; optional corrected word | Candidate split generation → character slicing → character OCR for each slice → candidate-word reconstruction | Segment previews, Top-3 predictions per segment, reconstructed word candidates, and selected split | Users can select the best split, enter a corrected word, and export segmentation feedback |
+| **Candidate split generation** | Explore multiple possible character boundaries in a word image | Uploaded word image | Generates candidate segmentations for `k = 2, 3, 4, 5` character slices | Multiple segmentation hypotheses | User selection identifies which segmentation is most plausible |
+| **Segment-level OCR** | Recognize each candidate character crop | Character slices from each candidate split | Runs the character-recognition pipeline independently on every crop | Top-3 predictions for each segment | Errors reveal whether failures originate from segmentation or character classification |
+| **Candidate-word reconstruction** | Convert segment predictions into word hypotheses | Segment-level Top-3 predictions | Combines leading character predictions for each segmentation candidate | Reconstructed candidate words | User can choose the best candidate or provide a manual corrected word |
+| **Character feedback loop** | Capture label corrections for single-character OCR | Top-1/Top-2/Top-3 selection or manual class label | Saves prediction and correction metadata | Reviewable character-level feedback records | TinyDB / CSV storage for future error analysis and curated retraining |
+| **Segmentation feedback loop** | Capture word-level split and transcription corrections | Selected split and optional corrected word | Saves segmentation choice, predicted candidates, and correction | JSON and CSV feedback exports | `segmentation_feedback.json` and `segmentation_feedback.csv` |
+| **Future learning use** | Turn reviewed errors into improvement candidates | Stored character and segmentation feedback | Analyze weak classes, hard handwriting, and segmentation failures | Curated data for targeted augmentation, retraining, and active-learning experiments | Feedback is collected for later review; it should not automatically retrain or modify the deployed model |
 
 
 
 
----
+### Updated Three-Tab Workflow
 
-# Why Swin Transformer
+| Tab | User Action | System Behavior | Output |
+|---|---|---|---|
+| **Character OCR** | Upload a handwritten Kannada character | Runs calibrated Swin V3 inference, quality checks, Top-3 ranking, and uncertainty routing | Prediction, alternatives, confidence, decision status, quality signals, and similar-class hints |
+| **Explain Prediction** | Upload an image and request explanation | Masks image patches and measures confidence drop for the predicted class | Occlusion-sensitivity heatmap and interpretation summary |
+| **Deployment Monitoring** | Refresh dashboard after inference requests | Aggregates local telemetry, calculates runtime statistics, evaluates PSI drift, and logs a sanitized W&B summary | Request count, latency statistics, review rate, quality trends, drift indicators, and telemetry export |
 
-A standard Vision Transformer applies global attention across all image patches. This can be computationally expensive and may require large datasets.
+### Design Principle
 
-Swin Transformer solves this by using:
+The updated interface does not claim that confidence or explainability guarantees correctness. Instead, it combines calibrated confidence, Top-k alternatives, image-quality checks, occlusion sensitivity, human review, and telemetry monitoring to make OCR predictions more inspectable and operationally responsible.
 
-* Window-based self-attention
-* Shifted windows
-* Hierarchical feature maps
-* Patch merging
-* Multi-scale learning
 
-This makes it suitable for handwritten Kannada recognition.
-
-Swin Transformer learns:
-
-```text
-Local Stroke Details
-        +
-Global Character Structure
-        +
-Hierarchical Multi-Scale Features
-```
-
-This is important because Kannada characters may contain:
-
-* Small dots
-* Curves
-* Loops
-* Vowel modifiers
-* Connected components
-* Ligatures
-* Fine stroke differences
-
----
 
 # Swin Transformer Architecture
 
@@ -359,77 +310,6 @@ Global Average Pooling
                                 ▼
                         Calibrated Top-3 Predictions
 ```
-
----
-
-## Patch Partition
-
-The input image is divided into small non-overlapping patches.
-
-Instead of processing every pixel individually, the model processes patch embeddings.
-
-```text
-224 × 224 Image
-        ↓
-Patch Partition
-        ↓
-Patch Tokens
-        ↓
-Transformer Processing
-```
-
----
-
-## Window-Based Self-Attention
-
-Instead of applying attention across the entire image, Swin Transformer applies attention within local windows.
-
-```text
-Image Feature Map
-        ↓
-Split into Windows
-        ↓
-Self-Attention inside each Window
-```
-
-This reduces computational cost.
-
----
-
-## Shifted Window Attention
-
-In alternate layers, the attention windows are shifted.
-
-```text
-Layer 1:
-Normal Windows
-
-Layer 2:
-Shifted Windows
-```
-
-This allows information to flow between neighboring windows.
-
-For Kannada characters, shifted windows help connect stroke patterns that may lie in different local regions.
-
----
-
-## Patch Merging
-
-Patch merging reduces spatial resolution and increases feature depth.
-
-```text
-High Resolution + Low Semantic Features
-        ↓
-Patch Merging
-        ↓
-Lower Resolution + Higher Semantic Features
-```
-
-This allows the model to learn both fine strokes and high-level character structure.
-
----
-
 # Swin V1, V2, and V3
 
 The project progresses through three Swin Transformer versions.
@@ -441,201 +321,6 @@ The project progresses through three Swin Transformer versions.
 | Swin V3 | Embedding head + centroid refinement + calibration + diagnostics | Final reliable deployment model              |
 
 ---
-
-
-
-### Why It Was Selected
-
-Swin V3 provides more than high accuracy.
-
-It provides:
-
-* Reliable confidence scores
-* Strong robustness
-* Stable Top-3 predictions
-* Better separation of visually similar classes
-* Improved deployment readiness
-* Better support for feedback-driven retraining
-
----
-
-# Why Focal Loss Instead of Cross-Entropy
-
-## Cross-Entropy Loss
-
-Cross-entropy treats all samples equally.
-
-```text
-Easy Sample → Contributes to Loss
-Hard Sample → Contributes to Loss
-```
-
-In high-accuracy models, easy examples dominate the loss.
-
-This can reduce the focus on difficult Kannada character pairs.
-
----
-
-## Focal Loss
-
-Focal Loss reduces the contribution of easy examples and focuses more on hard samples.
-
-```text
-Easy Correct Sample
-        ↓
-Lower Loss Contribution
-
-Hard Misclassified Sample
-        ↓
-Higher Loss Contribution
-```
-
-Mathematically:
-
-```text
-FL(pt) = -α(1 - pt)^γ log(pt)
-```
-
-Where:
-
-* `pt` is the predicted probability for the correct class
-* `α` balances class importance
-* `γ` controls how much focus is placed on difficult samples
-
----
-
-## Why Focal Loss Helps Here
-
-Focal Loss is especially useful because Kannada handwriting includes:
-
-* Similar strokes across classes
-* Rare compound characters
-* Small modifier differences
-* Difficult ligature-like forms
-* Ambiguous handwritten shapes
-
-Instead of allowing easy examples to dominate training, focal loss pushes the model to learn difficult boundaries.
-
----
-
-# Centroid Refinement
-
-The final Swin V3 model produces:
-
-1. Softmax probabilities
-2. A 512-dimensional feature embedding
-
-For every class, a centroid is calculated in embedding space.
-
-```text
-Class Images
-      ↓
-Feature Embeddings
-      ↓
-Average Embedding
-      ↓
-Class Centroid
-```
-
-During inference:
-
-```text
-Input Image
-      ↓
-Swin Transformer
-      ↓
-Softmax Probability
-      +
-Embedding Similarity to Class Centroids
-      ↓
-Refined Prediction Score
-      ↓
-Final Top-3 Predictions
-```
-
-## Why Centroid Refinement Helps
-
-Centroid refinement improves prediction consistency for visually similar Kannada characters.
-
-It helps:
-
-* Reduce overconfident mistakes
-* Improve Top-3 stability
-* Identify embedding-level confusion
-* Improve hard-sample analysis
-* Support future active learning
-
----
-
-# Calibration and Expected Calibration Error
-
-## Why Calibration Matters
-
-A model can be accurate but poorly calibrated.
-
-For example:
-
-```text
-Model Confidence = 99%
-Actual Correctness = 80%
-```
-
-This means the model is overconfident.
-
-For OCR deployment, confidence must be trustworthy.
-
----
-
-## Temperature Scaling
-
-Temperature scaling adjusts logits before softmax.
-
-```text
-Calibrated Probability = Softmax(Logits / Temperature)
-```
-
-The optimal temperature is learned using validation data.
-
-For the final model:
-
-```text
-Temperature = 0.5
-ECE ≈ 0.001
-```
-
----
-
-## Expected Calibration Error
-
-Expected Calibration Error measures how closely confidence matches actual correctness.
-
-```text
-Lower ECE = Better Calibration
-```
-
-| ECE Value    | Interpretation                       |
-| ------------ | ------------------------------------ |
-| High ECE     | Model confidence is unreliable       |
-| Moderate ECE | Confidence is somewhat useful        |
-| Low ECE      | Confidence aligns well with accuracy |
-| ECE ≈ 0.001  | Excellent calibration                |
-
-The final Swin V3 model achieves:
-
-```text
-ECE ≈ 0.001
-```
-
-This means model confidence can be used more reliably for:
-
-* Human verification
-* Automated rejection of uncertain samples
-* Feedback prioritization
-* Active learning
-* OCR workflow automation
-
----
-
 # Robustness and Stress Testing
 
 A real OCR system must work under more than clean benchmark images.
@@ -648,17 +333,9 @@ The final model was tested under several perturbations.
 | Background Jitter      |   0.9985 |   0.9986 |
 | Zoom / Crop Distortion |   0.9971 |   0.9972 |
 
+
+
 ---
-
-
-
-## Interpretation
-
-The model remains robust across all tested perturbations.
-
-The largest performance decrease occurs under ink darkening, which is expected because extreme stroke thickness can alter the internal shape of handwritten characters.
-
-However, performance remains strong, demonstrating that the model learns stable visual representations.
 
 ## V3 Reliability, Explainability, and Deployment Updates
 
@@ -681,7 +358,114 @@ The final Swin V3 release was tracked with Weights & Biases (W&B) to version eva
 | Model Parameters | 27.97M |
 | Checkpoint Size | 106.78 MB |
 
-> Results were measured on a class-stratified held-out evaluation split. Performance should be interpreted alongside split-integrity checks and may vary for unseen handwriting styles, capture conditions, and image quality.
+---
+### Saved Occlusion Sensitivity  Artifacts
+
+| Artifact | Purpose |
+|---|---|
+| `evaluation_prediction_explanation_manifest.csv` | Prediction-level audit trail containing true label, predicted label, confidence, correctness, and explanation paths. |
+| `per_class_occlusion_summary.csv` | Class-level overview across all 113 labels, including evaluation count, accuracy, representative confidence, and hard-example confidence. |
+| `representative_correct/` | Occlusion visualizations for representative correct predictions. |
+| `hard_examples/` | Occlusion visualizations for low-confidence or misclassified predictions. |
+
+> **Interpretation note:** Occlusion sensitivity measures how much masking a region changes the model's confidence for its original prediction. It is useful for debugging and qualitative review, but it should not be presented as a causal explanation of model reasoning.
+
+# Why Swin Transformer
+
+A standard Vision Transformer applies global attention across all image patches. This can be computationally expensive and may require large datasets.
+
+Swin Transformer solves this by using:
+
+* Window-based self-attention
+* Shifted windows
+* Hierarchical feature maps
+* Patch merging
+* Multi-scale learning
+
+This makes it suitable for handwritten Kannada recognition.
+
+Swin Transformer learns:
+
+```text
+Local Stroke Details
+        +
+Global Character Structure
+        +
+Hierarchical Multi-Scale Features
+```
+
+This is important because Kannada characters may contain:
+
+* Small dots
+* Curves
+* Loops
+* Vowel modifiers
+* Connected components
+* Ligatures
+* Fine stroke differences
+
+---
+
+
+## End-to-End Technical Overview
+
+| Area | Implementation / Technique | V3 Upgrade or Nuance | Proof of Work / Artifact | Applied ML Signal |
+|---|---|---|---|---|
+| **Dataset curation** | OpenCV contour-based sheet segmentation, character cropping, cleaning, label verification, and balancing | Built a 113-class dataset with 500 images per class (56,500 total); preserved class mapping through JSON-aligned processing | Dataset manifests, class JSON, extraction pipeline | Data-centric ML, dataset integrity, reproducibility |
+| **Validation design** | Class-stratified train/validation split | V3 uses a proper held-out split with representation from all 113 classes; addresses earlier split/label-quality limitations | Split manifests and per-class support counts | Evaluation discipline; avoids relying only on training accuracy |
+| **Architecture experimentation** | ResNet + BiLSTM + Attention, EfficientNet + CBAM, Swin Transformer iterations | Compared CNN/sequence-attention and transformer approaches before selecting Swin V3 | Model comparison notes, notebooks, checkpoints | Architecture selection based on evidence rather than one-model training |
+| **Swin Transformer V3** | `swin_tiny_patch4_window7_224` backbone with global pooling | Shifted-window self-attention captures local stroke structure while enabling cross-window context; suitable for visually similar handwritten glyphs | Swin V3 checkpoint and model definition | Vision Transformer understanding, transfer learning, fine-tuning |
+| **Classification head** | 512-dimensional embedding layer, BatchNorm, ReLU, dropout, linear classifier | Separates representation learning from classification and enables embedding-space diagnostics | Embeddings, centroid-neighbor CSV | Representation learning and diagnostic reasoning |
+| **Loss-function upgrade** | Focal Loss instead of standard cross-entropy | V3 emphasizes difficult or visually similar samples rather than allowing easy examples to dominate optimization | V3 training configuration and release notes | Imbalanced/hard-example learning |
+| **Prediction refinement** | Embedding centroid-neighbor analysis and calibrated Top-k ranking | Similar-class context supports review of ambiguous glyphs; it is diagnostic context, not a replacement for classifier probabilities | `centroid_top3_neighbors.csv` | Metric-space analysis, uncertainty-aware UX |
+| **Core evaluation** | Top-1/Top-2/Top-3 accuracy, macro-F1, per-class precision, recall, F1 | Evaluates both overall and class-balanced performance across all 113 labels | `per_class_detailed_metrics.csv`, W&B release metrics | Multiclass evaluation beyond accuracy |
+| **Error diagnostics** | Normalized confusion matrix, ranked confusing pairs, hard-sample analysis | Identifies recurring true-class → predicted-class errors and separates low-confidence from confidently wrong cases | `confusion_matrix_113.png`, `confusing_class_pairs.csv`, hard-example CSV/preview | Systematic error analysis and data-improvement planning |
+| **Reliability** | Temperature scaling, Expected Calibration Error, multiclass Brier score | Converts raw logits into more meaningful confidence estimates before displaying confidence or routing decisions | Calibration checkpoint, ECE/Brier metrics | Probabilistic ML and calibration awareness |
+| **Robustness testing** | Ink darkening, background brightness, zoom/crop perturbations | Tests whether performance remains stable under plausible handwriting capture variation | `robustness_stress_metrics.csv` | Distribution-shift and robustness evaluation |
+| **Interpretability** | Occlusion sensitivity for individual Swin V3 predictions | Masks image patches and measures predicted-class confidence drop; useful for checking whether evidence aligns with meaningful strokes | Occlusion manifests, representative-correct and hard-example heatmaps | Post-hoc visual interpretability with appropriate caveats |
+| **Earlier Gradio: Tab 1** | Single-character OCR | Image upload, preprocessing, calibrated Top-3 predictions, alternate selection, manual correction | Character feedback CSV / TinyDB | Interactive inference and human-in-the-loop feedback |
+| **Earlier Gradio: Tab 2** | Prototype word OCR with progressive segmentation | Generates candidate splits (`k=2–5`), runs character OCR per segment, reconstructs word candidates, stores corrections | Segmentation feedback JSON / CSV | OCR pipeline thinking beyond isolated classification |
+| **Current Gradio: Character OCR** | Calibrated Top-3 inference with quality gates | Uses confidence, Top-1/Top-2 margin, blur, brightness, and ink ratio to route predictions as **Accept**, **Review Required**, or **Retake Image** | Local telemetry and UI decision outputs | Responsible inference design |
+| **Current Gradio: Explain Prediction** | On-demand occlusion visualization | Connects an individual prediction with confidence-sensitive image regions and similar-class context | Occlusion plot and explanation summary | Explainable AI integrated into the product layer |
+| **Current Gradio: Deployment Monitoring** | Runtime dashboard for aggregate inference behavior | Summarizes latency, confidence, review rate, input-quality trends, and drift signals | Telemetry CSV, monitoring table | MLOps observability and deployment awareness |
+| **Inference telemetry** | Anonymous logging of latency, confidence, margin, decision route, blur, brightness, ink ratio, aspect ratio, and predicted label | Avoids storing uploaded images by default; separates operational metadata from raw user content | `inference_telemetry.csv` | Privacy-aware monitoring design |
+| **Drift monitoring** | Held-out validation baseline with Population Stability Index checks | Compares live confidence, margin, blur, brightness, and ink-ratio distributions against evaluation data | `deployment_drift_baseline.json`, PSI table | Post-deployment distribution-shift detection |
+| **Experiment tracking** | Weights & Biases V3 release validation | Records model quality, calibration, robustness, latency, throughput, parameters, checkpoint size, and diagnostics as a release record | W&B V3 release run and exported metrics | Reproducibility, experiment tracking, model release discipline |
+| **Feedback-to-retraining loop** | Local CSV, JSON, and TinyDB correction capture | Feedback is curated for review, not automatically used to update the deployed model; supports future active-learning-style data collection | Character and segmentation feedback files | Safe iterative improvement and data flywheel design |
+
+### What V3 Demonstrates
+
+| Capability | Evidence |
+|---|---|
+| **Model development** | CNN and transformer benchmarking, Swin V3 fine-tuning, Focal Loss, embedding head |
+| **Evaluation maturity** | Stratified validation, Top-k metrics, macro-F1, per-class analysis |
+| **Failure analysis** | Confusion matrix, confusing pairs, hard samples, centroid neighbors |
+| **Reliability awareness** | Temperature scaling, ECE, Brier score, uncertainty routing |
+| **Vision-specific validation** | Robustness tests for handwriting and image-capture variation |
+| **Interpretability** | Occlusion sensitivity tied to individual predictions and error review |
+| **Product implementation** | Character OCR, word-segmentation prototype, feedback workflows |
+| **Deployment thinking** | Latency profiling, quality gates, telemetry, drift baseline, PSI monitoring |
+| **MLOps practice** | W&B release tracking, versioned artifacts, lightweight repository hygiene |
+
+
+
+
+
+
+
+
+
+---
+
+
+## Interpretation
+
+The model remains robust across all tested perturbations.
+
+The largest performance decrease occurs under ink darkening, which is expected because extreme stroke thickness can alter the internal shape of handwritten characters.
+
+However, performance remains strong, demonstrating that the model learns stable visual representations.
+
 
 ### Reliability and Decision Support
 
@@ -731,16 +515,7 @@ Occlusion sensitivity is a post-hoc interpretability diagnostic for individual S
 | Incorrect prediction with concentrated bright strokes | The model relied on meaningful strokes but mapped them to a visually similar wrong class | Review confusing pairs, Top-k predictions, and add targeted examples if the pattern recurs. |
 | Incorrect prediction with background-focused heatmap | The model may be responding to nuisance cues rather than character structure | Flag for data-quality review and potential augmentation or crop normalization. |
 
-### Saved Occlusion Artifacts
 
-| Artifact | Purpose |
-|---|---|
-| `evaluation_prediction_explanation_manifest.csv` | Prediction-level audit trail containing true label, predicted label, confidence, correctness, and explanation paths. |
-| `per_class_occlusion_summary.csv` | Class-level overview across all 113 labels, including evaluation count, accuracy, representative confidence, and hard-example confidence. |
-| `representative_correct/` | Occlusion visualizations for representative correct predictions. |
-| `hard_examples/` | Occlusion visualizations for low-confidence or misclassified predictions. |
-
-> **Interpretation note:** Occlusion sensitivity measures how much masking a region changes the model's confidence for its original prediction. It is useful for debugging and qualitative review, but it should not be presented as a causal explanation of model reasoning.
 
 ### Deployment Monitoring
 
@@ -756,246 +531,9 @@ The Gradio deployment workflow is being extended with lightweight, privacy-aware
 
 ---
 
-# Metrics Comparison
-
-> Replace the values below with exact values from your experiment notebook if needed.
-
-| Model                       | Train Accuracy | Validation Accuracy | Validation Loss |  Macro-F1 |           ECE | Notes                                |
-| --------------------------- | -------------: | ------------------: | --------------: | --------: | ------------: | ------------------------------------ |
-| ResNet + BiLSTM + Attention |       Baseline |            Baseline |          Higher |     Lower | Not evaluated | Sequence-based CNN baseline          |
-| EfficientNet + CBAM         |         Strong |              Strong |        Moderate |    Strong | Not evaluated | Better local attention               |
-| Swin V1                     |         Higher |              Higher |           Lower |    Higher | Not evaluated | Hierarchical Transformer baseline    |
-| Swin V2                     |       Improved |            Improved |           Lower |  Improved |     Evaluated | Focal loss + cosine schedule         |
-| Swin V3                     |      Very High |              ~99.8% |          Lowest | Very High |        ~0.001 | Final model with centroid refinement |
-
----
+ |
 
 
-
-## Confusion Matrix
-
-A normalized confusion matrix is used to identify:
-
-* Frequently confused character pairs
-* Weak classes
-* Rare ligatures
-* Stroke-overlap errors
-* Vowel modifier confusion
-
----
-
-# Gradio Deployment
-
-The project includes a Gradio-based user interface.
-
-Run the application:
-
-```bash
-python app.py
-```
-
-The application opens in the browser.
-
----
-
-## Tab 1: Character Recognition
-
-This tab supports single handwritten character recognition.
-
-### Features
-
-* Upload handwritten character image
-* Preview input image
-* Run preprocessing
-* Display predicted character
-* Display confidence score
-* Display Top-3 predictions
-* Submit feedback
-* Select alternate prediction
-* Enter manual correction
-* Save feedback
-
-Workflow:
-
-```text
-Upload Character Image
-        ↓
-Preprocessing
-        ↓
-Swin V3 Prediction
-        ↓
-Centroid Refinement
-        ↓
-Temperature Calibration
-        ↓
-Top-3 Predictions
-        ↓
-User Feedback
-        ↓
-TinyDB / CSV Storage
-```
-
----
-
-## Tab 2: Word Recognition and Progressive Segmentation
-
-This tab supports prototype word-level OCR.
-
-### Features
-
-* Upload handwritten word image
-* Generate segmentation candidates
-* Test splits for:
-
-```text
-k = 2, 3, 4, 5
-```
-
-* Display cropped character segments
-* Display Top-3 predictions for each segment
-* Reconstruct candidate words
-* Select best segmentation
-* Enter manual corrected word
-* Save segmentation feedback
-* Export JSON feedback
-
-Workflow:
-
-```text
-Upload Word Image
-        ↓
-Generate Candidate Splits
-        ↓
-Segment into Character Slices
-        ↓
-Run Character OCR on Each Slice
-        ↓
-Reconstruct Candidate Word
-        ↓
-User Selects Best Split
-        ↓
-Save Feedback
-```
-
----
-
-# Feedback-Driven Learning
-
-The system stores user corrections for future retraining.
-
-Feedback storage formats:
-
-```text
-segmentation_feedback.json
-segmentation_feedback.csv
-```
-
-Character-level feedback may include:
-
-```json
-{
-  "image_path": "sample.png",
-  "predicted_class": "ka",
-  "confidence": 0.97,
-  "correct_label": "kha",
-  "user_feedback": "manual_correction"
-}
-```
-
-This feedback can later be used to:
-
-* Identify weak classes
-* Collect difficult samples
-* Improve augmentation
-* Retrain the model
-* Expand the dataset
-* Build active learning pipelines
-
-
-
-
-
-
-# Requirements
-
-Example `requirements.txt`:
-
-```txt
-torch
-torchvision
-timm
-opencv-python
-albumentations
-numpy
-pandas
-scikit-learn
-matplotlib
-seaborn
-gradio
-tinydb
-Pillow
-tqdm
-```
-
----
-
-# Training
-
-Train the final Swin V3 model:
-
-```bash
-python train.py \
-  --model swin_v3 \
-  --epochs 50 \
-  --batch_size 32 \
-  --learning_rate 0.0001 \
-  --loss focal \
-  --num_classes 113
-```
-
-Example training configuration:
-
-```python
-CONFIG = {
-    "model": "swin_v3",
-    "image_size": 224,
-    "num_classes": 113,
-    "batch_size": 32,
-    "epochs": 50,
-    "learning_rate": 1e-4,
-    "optimizer": "AdamW",
-    "loss": "FocalLoss",
-    "scheduler": "CosineAnnealingLR",
-    "mixed_precision": True,
-    "gradient_clipping": True
-}
-```
-
----
-
-# Inference
-
-Run character prediction:
-
-```bash
-python evaluate.py \
-  --checkpoint checkpoints/swin_v3.pth \
-  --image sample.png
-```
-
-Example output:
-
-```text
-Top-1 Prediction: ಕ
-Confidence: 0.998
-
-Top-3 Predictions:
-1. ಕ — 0.998
-2. ಖ — 0.001
-3. ಗ — 0.001
-```
-
----
 
 # Hardware Requirements
 
@@ -1090,35 +628,4 @@ This makes AksharaVision suitable as a foundation for future Kannada OCR researc
 
 ---
 
-# Citation
 
-```bibtex
-@project{aksharavision2026,
-  title={AksharaVision: Robust Kannada Handwritten Character Recognition using Swin Transformer},
-  author={Shrihari M V and Lavanya N and Arati Balaji and Akash Suragi},
-  year={2026},
-  institution={Bangalore Institute of Technology},
-  department={Department of CSE Data Science}
-}
-```
-
----
-
-# Acknowledgements
-
-* Bangalore Institute of Technology
-* Department of CSE (Data Science)
-* Project guide and faculty mentors
-* Contributors who provided handwritten Kannada samples
-* Open-source communities behind PyTorch, OpenCV, Albumentations, timm, and Gradio
-
----
-
-# License
-
-This project is intended for academic and research use.
-
-Before redistributing the dataset, ensure that contributor consent, handwriting privacy, and institutional data policies are respected.
-
-```
-```
