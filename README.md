@@ -266,120 +266,8 @@ Typical transformations include:
 * Cropping variation
 * Ink intensity variation
 
-Example augmentation pipeline:
 
-```python
-import albumentations as A
 
-train_transform = A.Compose([
-    A.Rotate(limit=12, p=0.5),
-    A.ShiftScaleRotate(
-        shift_limit=0.05,
-        scale_limit=0.10,
-        rotate_limit=10,
-        p=0.5
-    ),
-    A.RandomBrightnessContrast(
-        brightness_limit=0.2,
-        contrast_limit=0.2,
-        p=0.4
-    ),
-    A.GaussianBlur(
-        blur_limit=(3, 5),
-        p=0.2
-    ),
-    A.GaussNoise(
-        p=0.2
-    ),
-    A.Resize(224, 224)
-])
-```
-
-> Important: augmentation is applied only to the training dataset. Validation data remains clean and unchanged.
-
----
-
-# Baseline Model Exploration
-
-Before selecting Swin Transformer, multiple architectures were explored.
-
----
-
-## 1. ResNet + BiLSTM + Attention
-
-This baseline combines:
-
-```text
-Image
-  ↓
-ResNet CNN Backbone
-  ↓
-Feature Sequence
-  ↓
-BiLSTM
-  ↓
-Attention Layer
-  ↓
-Classifier
-```
-
-### Advantages
-
-* Strong CNN feature extraction.
-* BiLSTM helps model sequential feature relationships.
-* Attention highlights informative regions.
-
-### Limitations
-
-* Images must be converted into a sequence representation.
-* Spatial relationships may weaken after flattening.
-* Kannada characters require rich two-dimensional structural understanding.
-* More complex than necessary for isolated character recognition.
-
----
-
-## 2. EfficientNet + CBAM
-
-EfficientNet is an efficient CNN architecture using compound scaling.
-
-CBAM stands for:
-
-```text
-Convolutional Block Attention Module
-```
-
-CBAM adds:
-
-* Channel attention
-* Spatial attention
-
-Architecture:
-
-```text
-Image
-  ↓
-EfficientNet Backbone
-  ↓
-CBAM Attention Module
-  ↓
-Global Pooling
-  ↓
-Classification Head
-```
-
-### Advantages
-
-* Efficient parameter usage.
-* Better attention to important stroke regions.
-* Improved CNN baseline performance.
-* Good for local texture and shape features.
-
-### Limitations
-
-* CNN receptive fields are still primarily local.
-* Complex ligatures require broader context.
-* Long-range relationships between distant strokes are difficult to model.
-* Less effective than Swin Transformer for hierarchical character structure.
 
 ---
 
@@ -554,58 +442,7 @@ The project progresses through three Swin Transformer versions.
 
 ---
 
-## Swin V1
 
-Swin V1 serves as the initial Transformer baseline.
-
-### Features
-
-* Swin Tiny backbone
-* Standard classification head
-* Hierarchical attention
-* Patch merging
-* Window-based attention
-* Shifted-window attention
-
-### Role
-
-Swin V1 establishes that hierarchical Transformer models are better suited than CNN baselines for Kannada handwritten character recognition.
-
----
-
-## Swin V2
-
-Swin V2 improves the training strategy.
-
-### Improvements
-
-* Focal Loss
-* Cosine annealing learning-rate scheduler
-* Warmup strategy
-* Mixed precision training
-* Gradient clipping
-* Better handling of difficult classes
-
-### Why It Matters
-
-Swin V2 improves learning stability and shifts attention toward hard-to-classify samples.
-
----
-
-## Swin V3
-
-Swin V3 is the final model.
-
-### Improvements
-
-* 512-dimensional embedding head
-* Centroid-based refinement
-* Temperature scaling
-* Expected Calibration Error evaluation
-* Hard-sample mining
-* Robustness testing
-* Enhanced diagnostics
-* Deployment-ready checkpoint export
 
 ### Why It Was Selected
 
@@ -813,36 +650,7 @@ The final model was tested under several perturbations.
 
 ---
 
-## Stress Conditions
 
-### Ink Darkening
-
-Simulates:
-
-* Dark pen strokes
-* Marker-like writing
-* Ink bleed
-* Heavy pen pressure
-
-### Background Jitter
-
-Simulates:
-
-* Uneven paper texture
-* Scan artifacts
-* Camera background noise
-* Ruled paper variation
-
-### Zoom and Crop Distortion
-
-Simulates:
-
-* Improper camera framing
-* Partial cropping
-* Scale variation
-* Mobile capture errors
-
----
 
 ## Interpretation
 
@@ -851,6 +659,100 @@ The model remains robust across all tested perturbations.
 The largest performance decrease occurs under ink darkening, which is expected because extreme stroke thickness can alter the internal shape of handwritten characters.
 
 However, performance remains strong, demonstrating that the model learns stable visual representations.
+
+## V3 Reliability, Explainability, and Deployment Updates
+
+AksharaVision V3 extends the core Swin Transformer OCR pipeline with release validation, reliability analysis, interpretability diagnostics, and lightweight deployment monitoring.
+
+### Release Validation and Experiment Tracking
+
+The final Swin V3 release was tracked with Weights & Biases (W&B) to version evaluation metrics, deployment measurements, and diagnostic artifacts.
+
+| Metric | V3 Release Result |
+|---|---:|
+| Top-1 Accuracy | 99.89% |
+| Top-2 Accuracy | 99.93% |
+| Top-3 Accuracy | 99.95% |
+| Macro-F1 | 0.9989 |
+| Expected Calibration Error (ECE, 15 bins) | 0.00065 |
+| Multiclass Brier Score | 0.00112 |
+| Single-image Latency | 36.11 ms |
+| Batch Throughput | 242.09 images/sec |
+| Model Parameters | 27.97M |
+| Checkpoint Size | 106.78 MB |
+
+> Results were measured on a class-stratified held-out evaluation split. Performance should be interpreted alongside split-integrity checks and may vary for unseen handwriting styles, capture conditions, and image quality.
+
+### Reliability and Decision Support
+
+- Applied **temperature scaling** to calibrate confidence scores before inference.
+- Evaluated reliability using **ECE** and **multiclass Brier score**, rather than reporting accuracy alone.
+- Added calibrated **Top-3 predictions** to support review of visually similar Kannada characters.
+- Designed an uncertainty-aware routing policy:
+  - **Accept** for confident, clear predictions
+  - **Review Required** for low confidence or a small Top-1 / Top-2 margin
+  - **Retake Image** for low-quality inputs such as blur, insufficient ink, or overly dark crops
+
+### Explainability and Error Analysis
+
+- Added **occlusion sensitivity** explanations for Swin V3 predictions; masked image patches are evaluated to identify regions that most influence predicted-class confidence.
+- Retained per-class precision, recall, F1-score, normalized confusion matrices, confusing-class-pair analysis, and hard-example review.
+- Used embedding-centroid nearest-neighbor analysis to identify visually similar character classes and support Top-k review.
+- Evaluated robustness under ink contrast, background brightness, and zoom/crop perturbations.
+
+### Occlusion Sensitivity Overview
+
+Occlusion sensitivity is a post-hoc interpretability diagnostic for individual Swin V3 predictions. It masks small image patches one at a time and measures the reduction in calibrated confidence for the originally predicted class.
+
+| Output / Field | Meaning | How to Interpret It | Recommended Action |
+|---|---|---|---|
+| Input image | Original handwritten Kannada character submitted for inference | Provides the visual context for the explanation | Inspect stroke quality, crop, background, and character completeness. |
+| True label | Ground-truth class from the evaluation manifest | Available for held-out evaluation images only | Compare with predicted label to determine whether the explanation corresponds to a correct prediction. |
+| Predicted label | Highest-probability class predicted by Swin V3 | The class whose confidence is evaluated during patch masking | Use alongside Top-2 and Top-3 alternatives for visually similar characters. |
+| Calibrated confidence | Temperature-scaled probability of the predicted class | Higher confidence indicates stronger model certainty on the evaluation distribution | Low confidence should trigger review, especially if image quality is weak. |
+| Correctness | Whether predicted label matches the true label | Separates explanations for correct predictions from explanations for failures | Review incorrect predictions and compare their highlighted regions with confusing classes. |
+| Occlusion heatmap | Spatial map of confidence decrease after each patch is masked | Brighter regions indicate patches that caused a larger drop in predicted-class confidence | Check whether highlighted regions overlap meaningful strokes rather than borders, blank space, or noise. |
+| Confidence drop | Difference between original confidence and confidence after masking a patch | Larger positive values indicate stronger sensitivity to that region | Use as relative evidence of importance; do not interpret it as causal proof. |
+| Representative correct example | High-confidence correct sample selected for each class | Shows typical visual evidence used for a correctly classified character | Compare representative patterns across the 113 classes. |
+| Hard example | Misclassified or low-confidence sample selected for a class | Highlights uncertain, ambiguous, or visually difficult handwriting | Use for targeted data review, augmentation ideas, and human-review UI design. |
+| Per-class occlusion summary | One-row summary for each of the 113 classes | Combines evaluation sample count, class accuracy, representative confidence, and hard-example confidence | Identify classes that are accurate but fragile, or classes that need deeper error analysis. |
+| Evaluation explanation manifest | Prediction-level record for evaluated samples | Links file path, true label, prediction, confidence, correctness, and saved explanation outputs | Makes interpretability analysis reproducible and auditable. |
+| Similar-class context | Confusion pairs and centroid-neighbor diagnostics | Identifies visually nearby labels that may compete with the predicted class | Inspect whether errors align with known confusing character pairs. |
+
+### Reading the Heatmap
+
+| Heatmap Pattern | Plausible Interpretation | Caution |
+|---|---|---|
+| Bright regions align with key handwritten strokes | The prediction is sensitive to character-defining visual structure | This is supportive evidence, not a proof that the model learned linguistic rules. |
+| Bright regions appear mainly on image borders | The model may be influenced by crop position, padding, or background artifacts | Review preprocessing consistency and augmentation coverage. |
+| Bright regions focus on noise, shadows, or background | The model may rely on spurious visual cues | Inspect the sample, input-quality checks, and train/evaluation distribution. |
+| Diffuse heatmap across most of the image | The model may use broad global shape information or lack localized evidence | Compare with confidence, Top-1/Top-2 margin, and similar-class alternatives. |
+| Weak or nearly uniform heatmap | No single patch strongly changes confidence | This can occur for highly confident predictions or when the chosen patch size is too coarse. |
+| Incorrect prediction with concentrated bright strokes | The model relied on meaningful strokes but mapped them to a visually similar wrong class | Review confusing pairs, Top-k predictions, and add targeted examples if the pattern recurs. |
+| Incorrect prediction with background-focused heatmap | The model may be responding to nuisance cues rather than character structure | Flag for data-quality review and potential augmentation or crop normalization. |
+
+### Saved Occlusion Artifacts
+
+| Artifact | Purpose |
+|---|---|
+| `evaluation_prediction_explanation_manifest.csv` | Prediction-level audit trail containing true label, predicted label, confidence, correctness, and explanation paths. |
+| `per_class_occlusion_summary.csv` | Class-level overview across all 113 labels, including evaluation count, accuracy, representative confidence, and hard-example confidence. |
+| `representative_correct/` | Occlusion visualizations for representative correct predictions. |
+| `hard_examples/` | Occlusion visualizations for low-confidence or misclassified predictions. |
+
+> **Interpretation note:** Occlusion sensitivity measures how much masking a region changes the model's confidence for its original prediction. It is useful for debugging and qualitative review, but it should not be presented as a causal explanation of model reasoning.
+
+### Deployment Monitoring
+
+The Gradio deployment workflow is being extended with lightweight, privacy-aware monitoring.
+
+- Logs anonymous inference metadata: model version, latency, calibrated confidence, Top-1 / Top-2 margin, decision route, blur score, brightness, ink ratio, and aspect ratio.
+- Does **not** store uploaded user images by default.
+- Supports human feedback for Top-1, Top-2, Top-3, or manually corrected labels.
+- Links feedback to a prediction request ID for future error review and curated retraining.
+- Defines a drift baseline from held-out evaluation data and compares live input distributions using Population Stability Index (PSI) for confidence, uncertainty margin, blur, brightness, and ink ratio.
+
+
 
 ---
 
@@ -868,70 +770,7 @@ However, performance remains strong, demonstrating that the model learns stable 
 
 ---
 
-# Evaluation Metrics
 
-The project evaluates multiple metrics rather than relying only on accuracy.
-
-## Accuracy
-
-```text
-Accuracy = Correct Predictions / Total Predictions
-```
-
-Measures overall classification correctness.
-
----
-
-## Precision
-
-```text
-Precision = True Positives / (True Positives + False Positives)
-```
-
-Measures how many predicted labels are correct.
-
----
-
-## Recall
-
-```text
-Recall = True Positives / (True Positives + False Negatives)
-```
-
-Measures how many actual class samples are detected correctly.
-
----
-
-## F1 Score
-
-```text
-F1 = 2 × (Precision × Recall) / (Precision + Recall)
-```
-
-Useful for balanced class evaluation.
-
----
-
-## Macro-F1
-
-Macro-F1 calculates F1 independently for each class and then averages the results.
-
-This is important because all Kannada classes should be evaluated equally.
-
----
-
-## Top-3 Accuracy
-
-Top-3 accuracy checks whether the correct class appears among the three highest predictions.
-
-This is valuable for:
-
-* Human verification
-* Feedback interfaces
-* Ambiguous handwriting
-* OCR correction workflows
-
----
 
 ## Confusion Matrix
 
