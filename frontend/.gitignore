@@ -1,0 +1,32 @@
+@'
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Large model artifacts
+artifacts/*.pth
+artifacts/*.pt
+artifacts/*.zip
+
+# Local runtime data
+backend/app/storage/*.csv
+backend/app/storage/*.json
+backend/app/storage/*.db
+
+# Colab exports / large evaluation arrays
+diagnostics/*.zip
+diagnostics/colab_export/
+diagnostics/*.npy
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Editor / OS / notebooks
+.vscode/
+.ipynb_checkpoints/
+.DS_Store
+Thumbs.db
+'@ | Set-Content .gitignore

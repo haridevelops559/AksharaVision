@@ -1,0 +1,2 @@
+device,total_parameters,trainable_parameters,checkpoint_size_mb,single_image_latency_ms,batch_size,batch_throughput_images_per_second
+cuda,27972075,27972075,106.78460216522217,36.1081257800015,64,242.0924337441025
