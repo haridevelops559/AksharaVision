@@ -1,0 +1,47 @@
+*{
+
+    margin:0;
+
+    padding:0;
+
+    box-sizing:border-box;
+
+}
+
+body{
+
+    font-family:Inter,Segoe UI,Arial,sans-serif;
+
+    background:#F8FAFC;
+
+    color:#1E293B;
+
+}
+
+.page{
+
+    max-width:1200px;
+
+    margin:auto;
+
+    padding:45px;
+
+}
+
+h1{
+
+    margin-bottom:15px;
+
+    font-size:34px;
+
+}
+
+p{
+
+    color:#64748B;
+
+    line-height:1.7;
+
+    max-width:800px;
+
+}

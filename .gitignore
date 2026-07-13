@@ -5,3 +5,5 @@ project_files/
 diagnostics/
 logs/
 __pycache__/
+# Model weights
+artifacts/*.pth
